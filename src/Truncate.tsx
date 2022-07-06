@@ -1,46 +1,20 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 
-import { TruncateProps } from './Truncate.types';
+import { TruncateProps } from "./Truncate.types";
 
-import useStateWithCallbackLazy from './hooks/useStateWithCallbackLazy';
-
-const getElementInnerText = (
-    node: HTMLElement | null,
-    fallback: string = ''
-) => {
-    if (!node) {
-        return fallback;
-    }
-    const div = document.createElement('div');
-    const contentKey = 'innerText' in node ? 'innerText' : 'textContent';
-    div.innerHTML = node.innerHTML.replace(/\r\n|\r|\n/g, ' ');
-
-    let text = div[contentKey];
-    const test = document.createElement('div');
-    test.innerHTML = 'foo<br/>bar';
-
-    if (test[contentKey]?.replace(/\r\n|\r/g, '\n') !== 'foo\nbar') {
-        div.innerHTML = div.innerHTML.replace(/<br.*?[\/]?>/gi, '\n');
-        text = div[contentKey];
-    }
-
-    return text || fallback;
-};
-
-const trimRight = (text: string) => {
-    return text.replace(/\s+$/, '');
-};
+import useStateWithCallbackLazy from "./hooks/useStateWithCallbackLazy";
+import { getElementInnerText, trimRight } from "./utils";
 
 const Truncate: React.FC<TruncateProps> = ({
     children,
-    ellipsis = '...',
+    ellipsis = "...",
     lines: numLines = 1,
     trimWhitespace = false,
     onTruncate,
     width,
     ...spanProps
 }) => {
-    const targetRef = useRef<HTMLSpanElement>(null);
+    const contentRef = useRef<HTMLSpanElement>(null);
     const textRef = useRef<HTMLSpanElement>(null);
     const ellipsisRef = useRef<HTMLSpanElement>(null);
     const timoutIdRef = useRef<number | null>(null);
@@ -50,8 +24,8 @@ const Truncate: React.FC<TruncateProps> = ({
     const [targetWidth, setTargetWidth] = useStateWithCallbackLazy<number>(0);
 
     useEffect(() => {
-        const canvas = document.createElement('canvas');
-        canvasContext.current = canvas.getContext('2d');
+        const canvas = document.createElement("canvas");
+        canvasContext.current = canvas.getContext("2d");
         const ellipsis = ellipsisRef.current;
         return () => {
             timoutIdRef.current && cancelAnimationFrame(timoutIdRef.current);
@@ -63,15 +37,14 @@ const Truncate: React.FC<TruncateProps> = ({
 
     const calcualteLayout = useCallback(
         (callback?: (val: number) => void): any => {
-            if (!targetRef.current) {
+            if (!contentRef.current) {
                 return;
             }
             let result = width;
             if (!result) {
-                if (targetRef.current.parentNode instanceof HTMLElement) {
+                if (contentRef.current.parentNode instanceof HTMLElement) {
                     result = Math.floor(
-                        targetRef.current.parentNode?.getBoundingClientRect()
-                            .width
+                        contentRef.current.parentNode?.getBoundingClientRect().width
                     );
                 } else {
                     result = 0;
@@ -81,18 +54,13 @@ const Truncate: React.FC<TruncateProps> = ({
             // Delay calculation until parent node is inserted to the document
             // Mounting order in React is ChildComponent, ParentComponent
             if (!result) {
-                return window.requestAnimationFrame(() =>
-                    calcualteLayout(callback)
-                );
+                return window.requestAnimationFrame(() => calcualteLayout(callback));
             }
 
-            const style = window.getComputedStyle(targetRef.current);
-            const font = [
-                style.fontWeight,
-                style.fontStyle,
-                style.fontSize,
-                style.fontFamily
-            ].join(' ');
+            const style = window.getComputedStyle(contentRef.current);
+            const font = [style.fontWeight, style.fontStyle, style.fontSize, style.fontFamily].join(
+                " "
+            );
 
             if (canvasContext.current) {
                 canvasContext.current.font = font;
@@ -115,13 +83,13 @@ const Truncate: React.FC<TruncateProps> = ({
             }
         });
 
-        window.addEventListener('resize', onResize);
-        return () => window.removeEventListener('resize', onResize);
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
     }, [width, calcualteLayout]);
 
     const handleTruncate = useCallback(
         (didTruncate: boolean) => {
-            if (typeof onTruncate === 'function') {
+            if (typeof onTruncate === "function") {
                 timoutIdRef.current = window.requestAnimationFrame(() => {
                     onTruncate(didTruncate);
                 });
@@ -136,11 +104,11 @@ const Truncate: React.FC<TruncateProps> = ({
                 return (
                     <span key={i}>
                         {line}
-                        {ellipsis}
+                        {i === numLines - 1 && ellipsis}
                     </span>
                 );
             } else {
-                const br = <br key={i + 'br'} />;
+                const br = <br key={i + "br"} />;
 
                 if (line) {
                     return [<span key={i}>{line}</span>, br];
@@ -149,7 +117,7 @@ const Truncate: React.FC<TruncateProps> = ({
                 }
             }
         },
-        [ellipsis]
+        [ellipsis, numLines]
     );
 
     const measureWidth = (text: string) => {
@@ -157,14 +125,14 @@ const Truncate: React.FC<TruncateProps> = ({
     };
 
     const renderContent = useMemo(() => {
-        const mounted = !!(targetRef.current && targetWidth);
+        const mounted = !!(contentRef.current && targetWidth);
         if (!mounted) {
             return null;
         }
         const getLines = () => {
             const lines: string[] = [];
             const text = getElementInnerText(textRef.current);
-            const textLines = text.split('\n').map(line => line.split(' '));
+            const textLines = text.split("\n").map((line) => line.split(" "));
             let didTruncate = true;
             const ellipsisWidth = ellipsisRef.current?.offsetWidth || 0;
 
@@ -179,7 +147,7 @@ const Truncate: React.FC<TruncateProps> = ({
                     continue;
                 }
 
-                let resultLine: string = textWords.join(' ');
+                let resultLine: string = textWords.join(" ");
 
                 if (measureWidth(resultLine) <= targetWidth) {
                     if (textLines.length === 1) {
@@ -193,7 +161,7 @@ const Truncate: React.FC<TruncateProps> = ({
 
                 if (line === numLines) {
                     // Binary search determining the longest possible line inluding truncate string
-                    const textRest = textWords.join(' ');
+                    const textRest = textWords.join(" ");
 
                     let lower = 0;
                     let upper = textRest.length - 1;
@@ -203,10 +171,7 @@ const Truncate: React.FC<TruncateProps> = ({
 
                         const testLine = textRest.slice(0, middle + 1);
 
-                        if (
-                            measureWidth(testLine) + ellipsisWidth <=
-                            targetWidth
-                        ) {
+                        if (measureWidth(testLine) + ellipsisWidth <= targetWidth) {
                             lower = middle + 1;
                         } else {
                             upper = middle - 1;
@@ -221,7 +186,7 @@ const Truncate: React.FC<TruncateProps> = ({
                         // Remove blank lines from the end of text
                         while (!lastLineText.length && lines.length) {
                             const prevLine = lines.pop();
-                            lastLineText = trimRight(prevLine || '');
+                            lastLineText = trimRight(prevLine || "");
                         }
                     }
                     lines.push(lastLineText);
@@ -233,9 +198,7 @@ const Truncate: React.FC<TruncateProps> = ({
                     while (lower <= upper) {
                         const middle = Math.floor((lower + upper) / 2);
 
-                        const testLine = textWords
-                            .slice(0, middle + 1)
-                            .join(' ');
+                        const testLine = textWords.slice(0, middle + 1).join(" ");
 
                         if (measureWidth(testLine) <= targetWidth) {
                             lower = middle + 1;
@@ -251,7 +214,7 @@ const Truncate: React.FC<TruncateProps> = ({
                         continue;
                     }
 
-                    resultLine = textWords.slice(0, lower).join(' ');
+                    resultLine = textWords.slice(0, lower).join(" ");
                     textLines[0].splice(0, lower);
                     lines.push(resultLine);
                 }
@@ -263,26 +226,19 @@ const Truncate: React.FC<TruncateProps> = ({
             return getLines().map(renderLine);
         }
         return children;
-    }, [
-        children,
-        handleTruncate,
-        numLines,
-        renderLine,
-        targetWidth,
-        trimWhitespace
-    ]);
+    }, [children, handleTruncate, numLines, renderLine, targetWidth, trimWhitespace]);
 
     return (
-        <span {...spanProps} ref={targetRef}>
-            <span>{renderContent}</span>
+        <span {...spanProps}>
+            <span ref={contentRef}>{renderContent}</span>
             <span ref={textRef}>{children}</span>
             <span
                 ref={ellipsisRef}
                 style={{
-                    position: 'fixed',
-                    visibility: 'hidden',
+                    position: "fixed",
+                    visibility: "hidden",
                     top: 0,
-                    left: 0
+                    left: 0,
                 }}
             >
                 {ellipsis}

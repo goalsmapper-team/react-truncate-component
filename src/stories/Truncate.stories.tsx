@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { ComponentStory, ComponentMeta } from "@storybook/react";
 
 import Truncate from "../Truncate";
@@ -41,11 +41,49 @@ const SampleContent = () => {
     );
 };
 
-export const Primary = Template.bind({});
+export const Basic = Template.bind({});
 
-Primary.args = {
+Basic.args = {
     lines: 4,
     children: <SampleContent />,
 };
 
+const ShowMoreTemplate: ComponentStory<typeof Truncate> = (args) => {
+    const [truncated, setTruncated] = useState(true);
+    const [shouldShowLess, setShouldShowLess] = useState(false);
 
+    const toggleTruncate = useCallback(() => setTruncated(!truncated), [truncated]);
+    const onTruncate = useCallback((newTruncated) => {
+        if (newTruncated) {
+            setShouldShowLess(true);
+        }
+    }, []);
+
+    return (
+        <div style={{ width: 400, padding: 16, border: "1px solid #ccc" }}>
+            <Truncate
+                {...args}
+                lines={truncated ? args.lines : 0}
+                onTruncate={onTruncate}
+                ellipsis={
+                    <span>
+                        ... <button onClick={toggleTruncate}>Show more</button>
+                    </span>
+                }
+            />
+            {shouldShowLess && !truncated && <button onClick={toggleTruncate}>Show less</button>}
+        </div>
+    );
+};
+
+export const NoTruncate = ShowMoreTemplate.bind({});
+NoTruncate.args = {
+    lines: 4,
+    children: <div>Where does it come from?</div>,
+};
+
+export const DoTruncateShowMore = ShowMoreTemplate.bind({});
+DoTruncateShowMore.args = {
+    lines: 4,
+    children: <SampleContent />,
+};

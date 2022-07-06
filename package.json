@@ -4,6 +4,7 @@
     "description": "Truncate react component",
     "main": "dist/cjs/index.js",
     "module": "dist/esm/index.js",
+    "types": "dist/index.d.ts",
     "scripts": {
         "build": "rollup -c",
         "storybook": "start-storybook -p 6006",

@@ -56,6 +56,8 @@ const ShowMoreTemplate: ComponentStory<typeof Truncate> = (args) => {
     const onTruncate = useCallback((newTruncated) => {
         if (newTruncated) {
             setShouldShowLess(true);
+        } else {
+            setTruncated(false)
         }
     }, []);
 
@@ -86,4 +88,20 @@ export const DoTruncateShowMore = ShowMoreTemplate.bind({});
 DoTruncateShowMore.args = {
     lines: 4,
     children: <SampleContent />,
+};
+
+
+export const TruncateSomething = ShowMoreTemplate.bind({});
+TruncateSomething.args = {
+    lines: 7,
+    children: <div>
+        Something here
+        <ul>
+            <li>Item 1</li>
+            <li>Item 2</li>
+            <li>Item 3</li>
+            <li>Item 4</li>
+        </ul>
+        <div>Another thing</div>
+    </div>
 };
